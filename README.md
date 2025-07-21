@@ -1,4 +1,6 @@
 # DevTo Article Roaster
+
+[![Sponsor](https://img.shields.io/badge/Sponsor-❤-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/azis14)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000)](https://nodejs.org/en)
 [![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -104,3 +106,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-E5E5E5?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://clicky.id/azis14/support/coffee)
 [![More About Me](https://img.shields.io/badge/More%20About%20Me-E5E5E5?style=for-the-badge&logo=about.me&logoColor=black)](https://www.azis14.my.id/)
+
+If you encounter any issues or have questions, please [open an issue](https://github.com/azis14/devto-roaster/issues) on GitHub.
+
+If you like this repo or find it useful, please leave a ⭐️ on it.
+
+---
+
+Made with ❤️ by the open-source community
