@@ -102,7 +102,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Google AI Studio for the Gemini model
 - [Next.js](https://nextjs.org/) team for the amazing framework
 
-## Support
+## 📮 Support
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-E5E5E5?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://clicky.id/azis14/support/coffee)
 [![More About Me](https://img.shields.io/badge/More%20About%20Me-E5E5E5?style=for-the-badge&logo=about.me&logoColor=black)](https://www.azis14.my.id/)
