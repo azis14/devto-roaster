@@ -1,17 +1,48 @@
 "use client";
-import { useState } from "react";
-import { ClipLoader } from "react-spinners";
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react'
+import { useState, useEffect, useRef } from "react";
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
-import clsx from 'clsx'
+import clsx from 'clsx';
 
 const languages = ['English', 'Bahasa Indonesia'];
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
+  const [displayText, setDisplayText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [started, setStarted] = useState(false);
   const [lang, setLang] = useState('English');
+  const [typing, setTyping] = useState(false);
+  const prefersReducedMotion = useRef(false);
+
+  useEffect(() => {
+    prefersReducedMotion.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  useEffect(() => {
+    if (!text || loading) return;
+
+    if (prefersReducedMotion.current) {
+      setDisplayText(text);
+      setTyping(false);
+      return;
+    }
+
+    setTyping(true);
+    let i = 0;
+    setDisplayText("");
+    const interval = setInterval(() => {
+      i++;
+      setDisplayText(text.slice(0, i));
+      if (i >= text.length) {
+        clearInterval(interval);
+        setTyping(false);
+      }
+    }, 15);
+
+    return () => clearInterval(interval);
+  }, [text, loading]);
 
   function validateDevToUrl(url) {
     const pattern = /^https:\/\/dev\.to\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_-]+$/;
@@ -20,116 +51,168 @@ export default function Home() {
 
   async function submit() {
     if (url === "") {
-      toast.error("Please fill the url!");
+      toast.error("Please enter a DevTo article URL");
       return;
-    } if (!validateDevToUrl(url)) {
-      toast.error("Given url is not valid dev to article url!");
+    }
+    if (!validateDevToUrl(url)) {
+      toast.error("That doesn't look like a valid DevTo article URL");
       return;
     }
 
     setText("");
+    setDisplayText("");
     setLoading(true);
+    setStarted(true);
     const content = await fetchContent();
-    await runPrompt(content.text);
+    if (content) {
+      await runPrompt(content.text);
+    }
     setLoading(false);
   }
 
   async function fetchContent() {
     const encodedUrl = encodeURIComponent(url);
-
-    const response = await fetch(`/api/devto?url=${encodedUrl}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      return data;
-    } else {
-      console.error("Error:", data.error);
+    try {
+      const response = await fetch(`/api/devto?url=${encodedUrl}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        return data;
+      } else {
+        toast.error('Failed to fetch article');
+        return null;
+      }
+    } catch {
       toast.error('Failed to fetch article');
+      return null;
     }
   }
 
   async function runPrompt(content) {
-    const prompt = `You are a very experienced man who have a sense of humor and happy to criticize someone's publication with a little bit sarcasm but with good value. Please roast this article using ${lang}: ${content}`
-
-    const response = await fetch("/api/genai", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt: prompt }),
-    });
-
-    const data = await response.json();
-    if (response.ok) {
-      setText(data.text);
-    } else {
-      console.error("Error:", data.error);
-      toast.error('Failed to fetch AI response');
+    const prompt = `You are a very experienced person with a sharp sense of humor who loves to criticize someone's publication with sarcasm but good value. Please roast this article using ${lang} language: ${content}`;
+    try {
+      const response = await fetch("/api/genai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setText(data.text);
+      } else {
+        toast.error('Failed to get AI response');
+      }
+    } catch {
+      toast.error('Failed to get AI response');
     }
   }
 
   return (
-    <main className="w-full">
-      <div className="w-full font-mono text-sm lg:flex flex-col py-10">
-        <h1 className="mt-5 mx-auto text-3xl w-full text-center">DevTo Article Roaster</h1>
-        <input 
-          type="text" 
-          name="devtoURL" 
-          placeholder="DevTo url" 
-          value={url} 
-          onChange={(e) => setUrl(e.target.value)} 
-          className="bg-slate-200 p-2 w-5/6 text-black mx-auto text-center mt-10 block"
-        />
-        <h5 className="mt-5 mx-auto text-sm w-full text-center">Example: https://dev.to/username/article-slug</h5>
-        <div className="mx-auto w-52 py-5 mb-20">
-          <Listbox value={lang} onChange={setLang}>
-            <ListboxButton
-              className={clsx(
-                'relative block w-full rounded-lg bg-white/10 py-1.5 pr-8 pl-3 text-sm/6 text-white text-center border border-white',
-                'focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-white/25'
-              )}
-            >
-              {lang}
-            </ListboxButton>
-            <ListboxOptions
-              anchor="bottom"
-              transition
-              className={clsx(
-                'w-[var(--button-width)] rounded-xl border border-white/5 bg-white/5 p-1 [--anchor-gap:var(--spacing-1)] focus:outline-none',
-                'transition duration-100 ease-in data-[leave]:data-[closed]:opacity-0'
-              )}
-            >
-              {languages.map((language) => (
-                <ListboxOption
-                  key={language}
-                  value={language}
-                  className="group flex cursor-default items-center gap-2 rounded-lg py-1.5 px-3 select-none data-[focus]:bg-white/10"
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg mx-auto space-y-8">
+        <header className="text-center space-y-2">
+          <h1 className="font-display text-5xl font-bold tracking-tight">
+            🔥 DevTo Roaster
+          </h1>
+          <p className="text-dim text-base">
+            Roast any article with AI wit
+          </p>
+        </header>
+
+        <div className="bg-card rounded-2xl p-6 space-y-4 shadow-2xl ring-1 ring-white/5">
+          <input
+            type="text"
+            name="devtoURL"
+            placeholder="Paste DevTo article URL..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+            className="w-full bg-stage border border-white/10 rounded-xl px-4 py-3 text-warm placeholder-dim focus:outline-none focus:ring-2 focus:ring-accent-amber/50 focus:border-accent-amber/30 transition-all text-sm"
+          />
+
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Listbox value={lang} onChange={setLang}>
+                <ListboxButton
+                  className={clsx(
+                    'w-full rounded-xl bg-stage border border-white/10 px-4 py-3 text-sm text-warm text-left',
+                    'focus:outline-none focus:ring-2 focus:ring-accent-amber/50 focus:border-accent-amber/30 transition-all'
+                  )}
                 >
-                  <div className="text-sm/6 text-white">{language}</div>
-                </ListboxOption>
-              ))}
-            </ListboxOptions>
-          </Listbox>
+                  <span className="flex items-center justify-between">
+                    {lang}
+                    <svg className="w-4 h-4 text-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </ListboxButton>
+                <ListboxOptions
+                  anchor="bottom"
+                  transition
+                  className={clsx(
+                    'w-[var(--button-width)] rounded-xl border border-white/10 bg-card p-1.5 [--anchor-gap:4px] focus:outline-none',
+                    'transition duration-100 ease-in data-[leave]:data-[closed]:opacity-0'
+                  )}
+                >
+                  {languages.map((language) => (
+                    <ListboxOption
+                      key={language}
+                      value={language}
+                      className="group flex cursor-default items-center rounded-lg py-2 px-3 select-none data-[focus]:bg-accent-amber/20 data-[selected]:bg-accent-amber/10"
+                    >
+                      <div className="text-sm text-warm">{language}</div>
+                    </ListboxOption>
+                  ))}
+                </ListboxOptions>
+              </Listbox>
+            </div>
+
+            <button
+              onClick={submit}
+              disabled={loading}
+              className="px-6 py-3 bg-accent-amber hover:bg-accent-amber/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-semibold text-sm transition-all focus:outline-none focus:ring-2 focus:ring-accent-amber/50 flex-shrink-0"
+            >
+              {loading ? 'Roasting...' : 'Roast →'}
+            </button>
+          </div>
         </div>
-        <button
-          className="block mt-5 mx-auto bg-slate-400 hover:bg-black border-transparent hover:border-white p-3 border"
-          onClick={submit}
-        >
-          Roast Article 🔥
-        </button>
-        <p className="mx-auto mt-5 text-center p-5 mb-10">{text}</p>
-        {loading && <div className="w-1/2 mx-auto text-center">
-          <ClipLoader color="#fff" loading={loading} size={50} />
-          <h5 mt-5 mx-auto text-sm w-full text-center>Processing Response...</h5>
-        </div>}
+
+        {loading && (
+          <div className="bg-card rounded-2xl p-8 shadow-2xl ring-1 ring-white/5 flex flex-col items-center gap-4">
+            <div className="w-8 h-8 border-2 border-accent-amber/30 border-t-accent-amber rounded-full animate-spin" />
+            <p className="text-dim text-sm">Crafting the perfect roast...</p>
+          </div>
+        )}
+
+        {started && !loading && text && (
+          <div className="bg-card rounded-2xl p-6 shadow-2xl ring-1 ring-accent-amber/20 space-y-4 result-enter">
+            <h2 className="font-display text-xl font-semibold text-accent-amber">
+              The Roast
+            </h2>
+            <div className="w-full h-px bg-white/5" />
+            <div className={clsx('font-mono text-sm leading-relaxed text-warm typewriter', typing && 'typewriter-cursor')}>
+              {displayText}
+            </div>
+          </div>
+        )}
+
+        {started && !loading && !text && (
+          <div className="text-center text-dim text-sm py-4">
+            Something went wrong. Try a different article?
+          </div>
+        )}
       </div>
-      <footer className="bg-slate-400 text-white p-4 text-center fixed bottom-0 w-full">
-        <p>Crafted by <a className="underline hover:text-black" href="https://azis14.my.id" target="_blank">Azis</a> using NextJS and Google AI Studio</p>
+
+      <footer className="mt-auto pt-16 pb-6 text-center text-dim text-xs">
+        <p>
+          Crafted by{" "}
+          <a className="text-accent-amber hover:text-accent-amber/80 underline underline-offset-2 transition-colors" href="https://azis14.my.id" target="_blank" rel="noopener noreferrer">
+            Azis
+          </a>
+          {" "}· Powered by AI
+        </p>
       </footer>
     </main>
   );

@@ -7,6 +7,20 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        'stage': '#0F0F14',
+        'card': '#1C1C24',
+        'warm': '#F0EAE0',
+        'dim': '#8B8B9E',
+        'accent-amber': '#E8893A',
+        'accent-indigo': '#6366F1',
+        'result': '#34D399',
+      },
+      fontFamily: {
+        display: ['Newsreader', 'serif'],
+        body: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic":
