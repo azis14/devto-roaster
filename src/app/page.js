@@ -8,6 +8,39 @@ import remarkGfm from 'remark-gfm';
 
 const languages = ['English', 'Bahasa Indonesia'];
 
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 text-dim hover:text-accent-amber transition-colors text-xs"
+    >
+      {copied ? (
+        <>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Copied!
+        </>
+      ) : (
+        <>
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Copy
+        </>
+      )}
+    </button>
+  );
+}
+
 const loadingMessages = [
   "Analyzing the article...",
   "Calibrating sarcasm levels...",
@@ -203,9 +236,12 @@ export default function Home() {
 
         {started && !loading && text && (
           <div className="bg-card rounded-2xl p-6 shadow-2xl ring-1 ring-accent-amber/20 space-y-4 result-enter">
-            <h2 className="font-display text-xl font-semibold text-accent-amber">
-              The Roast
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-semibold text-accent-amber">
+                The Roast
+              </h2>
+              <CopyButton text={text} />
+            </div>
             <div className="w-full h-px bg-white/5" />
             <div className="roast-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
