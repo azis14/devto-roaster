@@ -3,46 +3,67 @@ import { useState, useEffect, useRef } from "react";
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
 import { toast } from 'react-hot-toast';
 import clsx from 'clsx';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const languages = ['English', 'Bahasa Indonesia'];
+
+const loadingMessages = [
+  "Analyzing the article...",
+  "Calibrating sarcasm levels...",
+  "Generating witty comebacks...",
+  "Seasoning the roast...",
+  "Polishing punchlines...",
+];
+
+function LoadingCard() {
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % loadingMessages.length);
+        setVisible(true);
+      }, 300);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="bg-card rounded-2xl p-8 shadow-2xl ring-1 ring-white/5 flex flex-col items-center gap-5">
+      <div className="flex items-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className="w-2.5 h-2.5 bg-accent-amber rounded-full"
+            style={{
+              animation: `dot-pulse 1.4s ease-in-out infinite`,
+              animationDelay: `${i * 200}ms`,
+            }}
+          />
+        ))}
+      </div>
+      <p
+        className="text-dim text-sm transition-opacity duration-300"
+        style={{
+          opacity: visible ? 1 : 0,
+          animation: visible ? 'message-fade-in 0.3s ease-out' : undefined,
+        }}
+      >
+        {loadingMessages[index]}
+      </p>
+    </div>
+  );
+}
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
-  const [displayText, setDisplayText] = useState("");
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
   const [lang, setLang] = useState('English');
-  const [typing, setTyping] = useState(false);
-  const prefersReducedMotion = useRef(false);
-
-  useEffect(() => {
-    prefersReducedMotion.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }, []);
-
-  useEffect(() => {
-    if (!text || loading) return;
-
-    if (prefersReducedMotion.current) {
-      setDisplayText(text);
-      setTyping(false);
-      return;
-    }
-
-    setTyping(true);
-    let i = 0;
-    setDisplayText("");
-    const interval = setInterval(() => {
-      i++;
-      setDisplayText(text.slice(0, i));
-      if (i >= text.length) {
-        clearInterval(interval);
-        setTyping(false);
-      }
-    }, 15);
-
-    return () => clearInterval(interval);
-  }, [text, loading]);
 
   function validateDevToUrl(url) {
     const pattern = /^https:\/\/dev\.to\/[a-zA-Z0-9_]+\/[a-zA-Z0-9_-]+$/;
@@ -60,7 +81,6 @@ export default function Home() {
     }
 
     setText("");
-    setDisplayText("");
     setLoading(true);
     setStarted(true);
     const content = await fetchContent();
@@ -179,12 +199,7 @@ export default function Home() {
           </div>
         </div>
 
-        {loading && (
-          <div className="bg-card rounded-2xl p-8 shadow-2xl ring-1 ring-white/5 flex flex-col items-center gap-4">
-            <div className="w-8 h-8 border-2 border-accent-amber/30 border-t-accent-amber rounded-full animate-spin" />
-            <p className="text-dim text-sm">Crafting the perfect roast...</p>
-          </div>
-        )}
+        {loading && <LoadingCard />}
 
         {started && !loading && text && (
           <div className="bg-card rounded-2xl p-6 shadow-2xl ring-1 ring-accent-amber/20 space-y-4 result-enter">
@@ -192,8 +207,10 @@ export default function Home() {
               The Roast
             </h2>
             <div className="w-full h-px bg-white/5" />
-            <div className={clsx('font-mono text-sm leading-relaxed text-warm typewriter', typing && 'typewriter-cursor')}>
-              {displayText}
+            <div className="roast-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {text}
+              </ReactMarkdown>
             </div>
           </div>
         )}
