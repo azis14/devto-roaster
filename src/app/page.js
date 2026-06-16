@@ -117,7 +117,7 @@ export default function Home() {
             🔥 DevTo Roaster
           </h1>
           <p className="text-dim text-base">
-            Roast any article with AI wit
+            Roast any article with AI-powered sarcasm. Just drop the DevTo URL and let the roasting begin!
           </p>
         </header>
 
